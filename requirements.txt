@@ -1,0 +1,5 @@
+django
+boto3
+djangorestframework
+groq
+python-dotenv

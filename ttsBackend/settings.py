@@ -132,4 +132,4 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8001",   # Optional: add the backend URL if needed
 ]
 
-ALLOWED_HOSTS = ['54.91.77.13', 'localhost', '127.0.0.1', 'ttsbackend.inraysmiv.xyz']
+ALLOWED_HOSTS = ['3.81.60.90', '54.91.77.13', 'localhost', '127.0.0.1', 'ttsbackend.inraysmiv.xyz']

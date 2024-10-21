@@ -99,7 +99,8 @@ def transcribe_and_synthesize(request):
         )
 
         # Print the completion returned by the LLM.
-        print(chat_completion.choices[0].message.content)
+        print('User Text:', transcribed_text)
+        print("Model response:", chat_completion.choices[0].message.content)
 
 
         response_text = chat_completion.choices[0].message.content

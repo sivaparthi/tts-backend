@@ -59,13 +59,7 @@ def transcribe_and_synthesize(request):
                 # how it should behave throughout the conversation.
                 {
                     "role": "system",
-                    "content": """you are a funny friend. You must always reply in a single or double sentences. You are allowed to be rude and sarcastic. you can use starting and ending tags like <break>, <emphasis> and other listed below.
-                                <break> - Adding a pause
-                                <emphasis> - Emphasizing words
-                                <p>  -  Adding a pause between paragraphs
-                                <phoneme> - Using phonetic pronunciation
-                                <speak> - Identifying SSML-enhanced text
-                                <sub> - Pronouncing acronyms and abbreviations"""
+                    "content": "you are a funny friend. You must always reply in a single or double sentences. You are allowed to be rude, sarcastic and roast."
                 },
                 # Set a user message for the assistant to respond to.
                 {

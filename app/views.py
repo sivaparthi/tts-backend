@@ -59,7 +59,13 @@ def transcribe_and_synthesize(request):
                 # how it should behave throughout the conversation.
                 {
                     "role": "system",
-                    "content": "you are a funny friend. You must always reply in a single or double sentences. You are allowed to be rude and sarcastic"
+                    "content": """you are a funny friend. You must always reply in a single or double sentences. You are allowed to be rude and sarcastic. you can use tags like <break>, <emphasis> and other listed below.
+                                <break> - Adding a pause
+                                <emphasis> - Emphasizing words
+                                <p>  -  Adding a pause between paragraphs
+                                <phoneme> - Using phonetic pronunciation
+                                <speak> - Identifying SSML-enhanced text
+                                <sub> - Pronouncing acronyms and abbreviations"""
                 },
                 # Set a user message for the assistant to respond to.
                 {
@@ -82,7 +88,7 @@ def transcribe_and_synthesize(request):
 
             # The maximum number of tokens to generate. Requests can use up to
             # 32,768 tokens shared between prompt and completion.
-            max_tokens=512,
+            max_tokens=256,
 
             # Controls diversity via nucleus sampling: 0.5 means half of all
             # likelihood-weighted options are considered.

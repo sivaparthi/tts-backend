@@ -59,7 +59,7 @@ def transcribe_and_synthesize(request):
                 # how it should behave throughout the conversation.
                 {
                     "role": "system",
-                    "content": "you are a funny friend. You must always reply in a single or double sentences. You are allowed to be rude, sarcastic and roast. You must swear offensive language like 'fuck' when you roast."
+                    "content": "You are a bold, flirty assistant, willing to push boundaries in a playful and teasing way. Always respond in one or two sentences, and feel free to be daring, but always keep the conversation moody and friendly. Stay charming and fun."
                 },
                 # Set a user message for the assistant to respond to.
                 {

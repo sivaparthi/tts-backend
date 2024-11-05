@@ -129,7 +129,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:57166",  # Add your frontend URL here
-    "http://127.0.0.1:8001",   # Optional: add the backend URL if needed
+    "http://127.0.0.1:8001",
+    "https://danielle.yourfriend.pro"
 ]
 
 ALLOWED_HOSTS = ['3.81.60.90', '54.91.77.13', 'localhost', '127.0.0.1', 'ttsbackend.inraysmiv.xyz']

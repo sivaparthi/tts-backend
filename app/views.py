@@ -78,7 +78,7 @@ def transcribe_and_synthesize(request):
             # Controls randomness: lowering results in less random completions.
             # As the temperature approaches zero, the model will become deterministic
             # and repetitive.
-            temperature=0.8,
+            temperature=0.7,
 
             # The maximum number of tokens to generate. Requests can use up to
             # 32,768 tokens shared between prompt and completion.

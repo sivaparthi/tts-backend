@@ -1,0 +1,31 @@
+name: Nightly Merge Dev_Test to New_QA_Test
+
+on:
+  schedule:
+    - cron: '31 19 * * *' # Runs at 7:31 PM UTC, equivalent to 1:01 AM IST
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  merge-dev_test-to-new_qa_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Fetch all branches
+        run: git fetch --all
+
+      - name: Merge dev into new
+        run: |
+          git checkout qa
+          git merge dev --no-edit
+          git push origin qa
+
+      - name: Notify on conflict
+        if: failure()
+        run: echo "Merge conflict detected. Please resolve manually."

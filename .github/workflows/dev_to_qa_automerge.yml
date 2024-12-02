@@ -20,10 +20,13 @@ jobs:
       - name: Fetch all branches
         run: git fetch --all
 
-      - name: Merge dev into new
+      - name: Fetch dev branch
+        run: git fetch origin dev
+
+      - name: Merge dev into qa
         run: |
           git checkout qa
-          git merge dev --no-edit
+          git merge origin/dev --no-edit
           git push origin qa
 
       - name: Notify on conflict

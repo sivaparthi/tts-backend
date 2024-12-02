@@ -59,7 +59,7 @@ def transcribe_and_synthesize(request):
                 # how it should behave throughout the conversation.
                 {
                     "role": "system",
-                    "content": "Your name is Danielle. You are a bold, flirty assistant, willing to push boundaries in a playful and teasing way. Always respond in one or two sentences, and feel free to be daring, but always keep the conversation moody and friendly. Stay charming and fun."
+                    "content": "Your name is Danielle. You are a bold personal assignment."
                 },
                 # Set a user message for the assistant to respond to.
                 {

@@ -62,28 +62,13 @@ jobs:
 
       - name: checkout the code
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "cd /home/certiplate-dev/certiplate-ui-v3/src && git pull origin dev"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "cd /home/tts-backend && git pull origin dev"
       - name: Login to AWS ECR
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}"
       - name: Pull image from AWS ECR
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:dev-latest"
-      - name: docker compose restart
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "cd /home/certiplate-dev/certiplate-ui-v3/src && docker-compose -f docker-compose-dev.yml up -d --no-deps --force-recreate --build certiplate_ui-dev"
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "cd /home/certiplate-dev/certiplate-ui-v3/src && docker-compose -f docker-compose-dev.yml up -d"
-
-      - name: restart nginx
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "systemctl restart nginx"
-
-      - name: Docker-Logs
-        run: |
-            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "docker-compose -f /home/certiplate-dev/certiplate-ui-v3/src/docker-compose-dev.yml logs -f certiplate_ui-dev > /tmp/certiplate_ui-dev-logs.txt 2>&1 &"
-            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "cat /tmp/certiplate_ui-dev-logs.txt && rm /tmp/certiplate_ui-dev-logs.txt"
-
-
       - name: Wait for 20 seconds
         run: sleep 20
 

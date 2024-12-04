@@ -1,0 +1,91 @@
+name: Certiplate-UI-V3 - dev
+
+on:
+  push:
+    branches:
+      - dev
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  ECR_REGISTRY: 242981001190.dkr.ecr.us-east-1.amazonaws.com
+  ECR_REPOSITORY: ai-voice-assistant/backend
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY_DEV_QA }}
+  remote-username: ubuntu
+  remote-hostname: ec2-44-204-0-195.compute-1.amazonaws.com
+  ENV: dev
+
+jobs:
+  Build_and_Deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Read version from file
+        id: read-version
+        run: echo ::set-output name=VERSION::$(cat version.txt)
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and Push Docker image to aws ECR
+        run: |
+          docker build -t ${{ env.ECR_REPOSITORY }}  .
+          docker tag ${{ env.ECR_REPOSITORY }}:latest ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.ENV }}-latest
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.ENV }}-latest
+          docker tag ${{ env.ECR_REPOSITORY }}:latest ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.ENV }}-${{ steps.read-version.outputs.VERSION }}
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.ENV }}-${{ steps.read-version.outputs.VERSION }}
+
+      - name: SSH into remote server and copy the artifactory
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: checkout the code
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "cd /home/certiplate-dev/certiplate-ui-v3/src && git pull origin dev"
+      - name: Login to AWS ECR
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}"
+      - name: Pull image from AWS ECR
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:dev-latest"
+      - name: docker compose restart
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "cd /home/certiplate-dev/certiplate-ui-v3/src && docker-compose -f docker-compose-dev.yml up -d --no-deps --force-recreate --build certiplate_ui-dev"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "cd /home/certiplate-dev/certiplate-ui-v3/src && docker-compose -f docker-compose-dev.yml up -d"
+
+      - name: restart nginx
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "systemctl restart nginx"
+
+      - name: Docker-Logs
+        run: |
+            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "docker-compose -f /home/certiplate-dev/certiplate-ui-v3/src/docker-compose-dev.yml logs -f certiplate_ui-dev > /tmp/certiplate_ui-dev-logs.txt 2>&1 &"
+            ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "cat /tmp/certiplate_ui-dev-logs.txt && rm /tmp/certiplate_ui-dev-logs.txt"
+
+
+      - name: Wait for 20 seconds
+        run: sleep 20
+
+      - name: remove unused images
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "yes | docker system prune -a"

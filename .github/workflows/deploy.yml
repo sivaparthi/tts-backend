@@ -62,7 +62,7 @@ jobs:
 
       - name: checkout the code
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "cd /home/tts-backend && git pull origin dev"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "cd /home/tts-backend && git config pull.rebase false && git pull origin dev"
       - name: Login to AWS ECR
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}"

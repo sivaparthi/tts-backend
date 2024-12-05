@@ -8,13 +8,11 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   ECR_REGISTRY: 242981001190.dkr.ecr.us-east-1.amazonaws.com
   ECR_REPOSITORY: ai-voice-assistant/backend
   SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY_DEV_QA }}
-  remote-username: ubuntu
-  remote-hostname: ec2-44-204-0-195.compute-1.amazonaws.com
+  REMOTE_USERNAME: ubuntu
+  REMOTE_HOSTNAME: ec2-44-204-0-195.compute-1.amazonaws.com
   ENV: dev
 
 jobs:
@@ -22,13 +20,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      # Step 2: Read version from the file
       - name: Read version from file
         id: read-version
-        run: echo ::set-output name=VERSION::$(cat version.txt)
+        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
 
+      # Step 3: Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -36,42 +37,54 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # Step 4: Verify AWS credentials (optional, for debugging)
+      - name: Verify AWS credentials
+        run: aws sts get-caller-identity
+
+      # Step 5: Login to Amazon ECR
       - name: Login to Amazon ECR
-        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build and Push Docker image to aws ECR
+      # Step 6: Build and Push Docker image to AWS ECR
+      - name: Build and Push Docker image to AWS ECR
         run: |
-          docker build -t ${{ env.ECR_REPOSITORY }}  .
-          docker tag ${{ env.ECR_REPOSITORY }}:latest ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.ENV }}-latest
-          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.ENV }}-latest
-          docker tag ${{ env.ECR_REPOSITORY }}:latest ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.ENV }}-${{ steps.read-version.outputs.VERSION }}
-          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.ENV }}-${{ steps.read-version.outputs.VERSION }}
+          docker build -t $ECR_REPOSITORY .
+          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:$ENV-latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$ENV-latest
+          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:$ENV-${{ env.VERSION }}
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$ENV-${{ env.VERSION }}
 
-      - name: SSH into remote server and copy the artifactory
+      # Step 7: Setup SSH
+      - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
 
-      - name: checkout the code
+      # Step 8: Checkout and pull latest code on remote server
+      - name: Checkout the code on the remote server
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "cd /home/tts-backend && git config pull.rebase false && git pull origin dev"
-      - name: Login to AWS ECR
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $REMOTE_USERNAME@$REMOTE_HOSTNAME \
+          "cd /home/tts-backend && git config pull.rebase false && git pull origin dev"
+
+      # Step 9: Login to AWS ECR on remote server
+      - name: Login to AWS ECR on remote server
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $REMOTE_USERNAME@$REMOTE_HOSTNAME \
+          "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY/$ECR_REPOSITORY"
+
+      # Step 10: Pull the latest Docker image from ECR
       - name: Pull image from AWS ECR
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:dev-latest"
-      - name: Wait for 20 seconds
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $REMOTE_USERNAME@$REMOTE_HOSTNAME \
+          "docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$ENV-latest"
+
+      # Step 11: Wait for containers to stabilize (optional)
+      - name: Wait for containers to stabilize
         run: sleep 20
 
-      - name: remove unused images
+      # Step 12: Remove unused Docker images on the remote server
+      - name: Remove unused Docker images
         run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ env.remote-username }}@${{ env.remote-hostname }} "yes | docker system prune -a"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $REMOTE_USERNAME@$REMOTE_HOSTNAME \
+          "yes | docker system prune -a"

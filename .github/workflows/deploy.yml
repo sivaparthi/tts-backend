@@ -51,8 +51,8 @@ jobs:
           docker build -t $ECR_REPOSITORY .
           docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:$ENV-latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$ENV-latest
-          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:$ENV-${{ env.VERSION }}
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$ENV-${{ env.VERSION }}
+          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:$ENV-0.1
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$ENV-0.1
 
       # Step 7: Setup SSH
       - name: Setup SSH Key

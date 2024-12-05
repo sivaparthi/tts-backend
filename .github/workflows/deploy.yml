@@ -82,9 +82,3 @@ jobs:
       # Step 11: Wait for containers to stabilize (optional)
       - name: Wait for containers to stabilize
         run: sleep 20
-
-      # Step 12: Remove unused Docker images on the remote server
-      - name: Remove unused Docker images
-        run: |
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $REMOTE_USERNAME@$REMOTE_HOSTNAME \
-          "yes | docker system prune -a"
